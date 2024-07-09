@@ -5,10 +5,15 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
+
+	client "github.com/end1essrage/dndhelper-discord/client"
 
 	"github.com/bwmarrin/discordgo"
 )
+
+const commandLiteral string = "="
 
 var (
 	Token string
@@ -55,10 +60,67 @@ func onMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if m.Author.ID == s.State.User.ID {
 		return
 	}
-	if m.Content == "ping" {
-		s.ChannelMessageSend(m.ChannelID, "Pong!")
+
+	if m.Content[0] != commandLiteral[0] { //переделать на байтовую команду
+		return
 	}
-	if m.Content == "pong" {
-		s.ChannelMessageSend(m.ChannelID, "Ping!")
+
+	//разделяем на слова, создаем команду и заполняем переменные
+
+	items := strings.Split(m.Content, " ")
+	sCommand := items[0][1:]
+
+	fmt.Print(items[1])
+
+	switch sCommand {
+	case "spellinfo":
+		s.ChannelMessageSend(m.ChannelID, handleSpellInfoCommand(items[1]))
+		break
+	case "help":
+		break
+	default:
+		break
 	}
+}
+
+func handleSpellInfoCommand(spellName string) string {
+
+	var sb strings.Builder
+
+	spell, err := getSpellInfo(spellName)
+	if err != nil {
+		sb.WriteString("ERROR OCCURED: ")
+		sb.WriteString(err.Error())
+	}
+
+	sb.WriteString("Spell Name : " + spell.Name)
+	sb.WriteString("\n")
+
+	sb.WriteString("Description: ")
+	for i := 0; i < len(spell.Desc); i++ {
+		sb.WriteString(spell.Desc[i])
+		sb.WriteString("\n")
+	}
+
+	sb.WriteString("Damage is " + spell.Damage.DamageType.Name + "\n")
+	for key, value := range spell.Damage.DamageAtSlotLevel {
+		sb.WriteString(key + " - " + value + "\n")
+	}
+
+	fmt.Print(sb.String())
+
+	return sb.String()
+}
+
+func getSpellInfo(spellName string) (*client.Spell, error) {
+	//отправить запрос на апишку
+	client := client.NewClient("localhost:8080")
+	//десериализовать в объект
+	spell, err := client.GetSpellInfo(spellName)
+	if err != nil {
+		//
+	}
+
+	//отправить ответ
+	return spell, nil
 }
