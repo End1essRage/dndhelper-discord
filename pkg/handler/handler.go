@@ -14,10 +14,10 @@ func NewHandler(client *client.Client) *Handler {
 	return &Handler{client: client}
 }
 
-func (h *Handler) Handle(command string, params ...string) (string, error) {
+func (h *Handler) Handle(command string, value string, params map[string]string) (string, error) {
 	switch command {
 	case "spellinfo":
-		return h.getSpellInfo(params[0])
+		return h.getSpellInfo(value, params)
 	case "help":
 		return h.getHelpMessage(), nil
 	default:
@@ -29,9 +29,13 @@ func (h *Handler) getHelpMessage() string {
 	return "help"
 }
 
-func (h *Handler) getSpellInfo(spellName string) (string, error) {
+// Реализовать автодокуиентирование доступных команд
+func (h *Handler) getSpellInfo(spellName string, params map[string]string) (string, error) {
 
 	var sb strings.Builder
+
+	//считываем параметр
+	sb.WriteString("lang is " + params["lang"])
 
 	spell, err := h.client.GetSpellInfo(spellName)
 	if err != nil {

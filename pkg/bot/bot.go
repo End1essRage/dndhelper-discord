@@ -56,13 +56,34 @@ func (b *Bot) onMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	items := strings.Split(m.Content, " ")
 	sCommand := items[0][1:]
+	params := make(map[string]string)
+	value := ""
 
-	message, err := b.handler.Handle(sCommand, items[1][:])
+	for i := 1; i < len(items); i++ {
+		// если есть -, то определять как параметр, иначе это является значением
+		if string(items[i][0]) == "-" {
+			flags := strings.Split(items[i], "=")
+			if len(flags) > 2 {
+				//err
+				continue
+			}
+			params[flags[0][1:]] = flags[1]
+		} else {
+			value = items[i]
+		}
+	}
+
+	if value == "" {
+		s.ChannelMessageSend(m.ChannelID, "error reading command value")
+	}
+
+	message, err := b.handler.Handle(sCommand, value, params)
 	if err != nil {
 		s.ChannelMessageSend(m.ChannelID, "error occured")
 	}
-	//Добавить обработку флагов и параметровб подумать над реализацией опредления данных и параметРОВ,,
-
+	//Добавить обработку флагов и параметровб подумать над реализацией опредления данных и параметров
+	//Можно нарезать строку и вычленивать значение параметров
+	// фориат пока -ключ=значение
 	s.ChannelMessageSend(m.ChannelID, message)
 }
 
