@@ -1,5 +1,6 @@
 package client
 
+//вынести в отдельный модуль
 type Spell struct {
 	Index         string     `json:"index"`
 	Name          string     `json:"name"`
