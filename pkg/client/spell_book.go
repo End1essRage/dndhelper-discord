@@ -3,14 +3,19 @@ package client
 import (
 	"encoding/json"
 	"fmt"
+
 	"net/http"
 	"net/url"
 	"path"
+
+	t "github.com/end1essrage/dndhelper-discord/pkg/types"
 )
 
+// Через интерфейс и наследование вынести как отдельный клиент
 const rout = "spell-book"
 
-func (c *Client) GetSpellInfo(spellName string) (*Spell, error) {
+// Добавить ДТО для параметризации запроса
+func (c *Client) GetSpellInfo(spellName string) (*t.Spell, error) {
 	u := url.URL{
 		Scheme: "http",
 		Host:   c.host,
@@ -32,7 +37,7 @@ func (c *Client) GetSpellInfo(spellName string) (*Spell, error) {
 		return nil, fmt.Errorf("can't do request: %w", err)
 	}
 
-	var spell Spell
+	var spell t.Spell
 	err = json.Unmarshal(resp, &spell)
 
 	return &spell, err

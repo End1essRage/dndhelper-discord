@@ -1,4 +1,4 @@
-package client
+package types
 
 //вынести в отдельный модуль
 type Spell struct {

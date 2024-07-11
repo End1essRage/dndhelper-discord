@@ -33,7 +33,6 @@ func (h *Handler) getHelpMessage() string {
 func (h *Handler) getSpellInfo(spellName string, params map[string]string) (string, error) {
 
 	var sb strings.Builder
-
 	//считываем параметр
 	sb.WriteString("lang is " + params["lang"])
 
@@ -43,6 +42,10 @@ func (h *Handler) getSpellInfo(spellName string, params map[string]string) (stri
 		sb.WriteString(err.Error())
 		return sb.String(), err
 	}
+
+	//Реализовать обработку параметров и формирование ДТО
+
+	//Форматирование выводим данных вынести в модель заклинания
 
 	sb.WriteString("Spell Name : " + spell.Name)
 	sb.WriteString("\n")

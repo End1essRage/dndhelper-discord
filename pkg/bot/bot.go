@@ -81,9 +81,7 @@ func (b *Bot) onMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if err != nil {
 		s.ChannelMessageSend(m.ChannelID, "error occured")
 	}
-	//Добавить обработку флагов и параметровб подумать над реализацией опредления данных и параметров
-	//Можно нарезать строку и вычленивать значение параметров
-	// фориат пока -ключ=значение
+
 	s.ChannelMessageSend(m.ChannelID, message)
 }
 
