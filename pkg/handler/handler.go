@@ -1,9 +1,13 @@
 package handler
 
 import (
-	"strings"
+	"encoding/json"
+	"fmt"
 
 	client "github.com/end1essrage/dndhelper-discord/pkg/client"
+	factory "github.com/end1essrage/dndhelper-discord/pkg/commands"
+	formatter "github.com/end1essrage/dndhelper-discord/pkg/helpers"
+	t "github.com/end1essrage/dndhelper-discord/pkg/types"
 )
 
 type Handler struct {
@@ -32,34 +36,37 @@ func (h *Handler) getHelpMessage() string {
 // Реализовать автодокуиентирование доступных команд
 func (h *Handler) getSpellInfo(spellName string, params map[string]string) (string, error) {
 
-	var sb strings.Builder
-	//считываем параметр
-	sb.WriteString("lang is " + params["lang"])
+	command := factory.NewSpellInfoCommand(h.client, spellName, params["lang"])
+	//create request
+	req, err := command.Execute()
 
-	spell, err := h.client.GetSpellInfo(spellName)
 	if err != nil {
-		sb.WriteString("ERROR OCCURED: ")
-		sb.WriteString(err.Error())
-		return sb.String(), err
+		return "", fmt.Errorf("can't do request: %w", err)
+	}
+	//send request
+	resp, err := h.client.DoRequest(req)
+
+	if err != nil {
+		return "", fmt.Errorf("can't do request: %w", err)
 	}
 
-	//Реализовать обработку параметров и формирование ДТО
+	var spell t.Spell
+	err = json.Unmarshal(resp, &spell)
 
-	//Форматирование выводим данных вынести в модель заклинания
-
-	sb.WriteString("Spell Name : " + spell.Name)
-	sb.WriteString("\n")
-
-	sb.WriteString("Description: ")
-	for i := 0; i < len(spell.Desc); i++ {
-		sb.WriteString(spell.Desc[i])
-		sb.WriteString("\n")
+	if err != nil {
+		return "", fmt.Errorf("can't unmarshall: %w", err)
 	}
 
-	sb.WriteString("Damage is " + spell.Damage.DamageType.Name + "\n")
-	for key, value := range spell.Damage.DamageAtSlotLevel {
-		sb.WriteString(key + " - " + value + "\n")
+	var format formatter.Formatter
+
+	switch params["display"] {
+	case "min":
+		format = formatter.NewMinimalisticFormatter()
+	case "max":
+		format = formatter.NewSimpleFormatter()
+	default:
+		format = formatter.NewSimpleFormatter()
 	}
 
-	return sb.String(), nil
+	return format.FormatSpellInfo(spell), nil
 }
