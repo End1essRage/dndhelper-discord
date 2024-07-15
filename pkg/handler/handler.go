@@ -1,9 +1,6 @@
 package handler
 
 import (
-	"encoding/json"
-	"fmt"
-
 	client "github.com/end1essrage/dndhelper-discord/pkg/client"
 	factory "github.com/end1essrage/dndhelper-discord/pkg/commands"
 	formatter "github.com/end1essrage/dndhelper-discord/pkg/helpers"
@@ -18,10 +15,10 @@ func NewHandler(client *client.Client) *Handler {
 	return &Handler{client: client}
 }
 
-func (h *Handler) Handle(command string, value string, params map[string]string) (string, error) {
-	switch command {
+func (h *Handler) Handle(command t.BotCommand) (string, error) {
+	switch command.Command {
 	case "spellinfo":
-		return h.getSpellInfo(value, params)
+		return h.getSpellInfo(command.Value, command.Params)
 	case "help":
 		return h.getHelpMessage(), nil
 	default:
@@ -33,30 +30,7 @@ func (h *Handler) getHelpMessage() string {
 	return "help"
 }
 
-// Реализовать автодокуиентирование доступных команд
 func (h *Handler) getSpellInfo(spellName string, params map[string]string) (string, error) {
-
-	command := factory.NewSpellInfoCommand(h.client, spellName, params["lang"])
-	//create request
-	req, err := command.Execute()
-
-	if err != nil {
-		return "", fmt.Errorf("can't do request: %w", err)
-	}
-	//send request
-	resp, err := h.client.DoRequest(req)
-
-	if err != nil {
-		return "", fmt.Errorf("can't do request: %w", err)
-	}
-
-	var spell t.Spell
-	err = json.Unmarshal(resp, &spell)
-
-	if err != nil {
-		return "", fmt.Errorf("can't unmarshall: %w", err)
-	}
-
 	var format formatter.Formatter
 
 	switch params["display"] {
@@ -68,5 +42,7 @@ func (h *Handler) getSpellInfo(spellName string, params map[string]string) (stri
 		format = formatter.NewSimpleFormatter()
 	}
 
-	return format.FormatSpellInfo(spell), nil
+	command := factory.NewSpellInfoCommand(spellName, params["lang"], format)
+
+	return command.Execute(h.client)
 }

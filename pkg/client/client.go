@@ -1,9 +1,5 @@
 package client
 
-//rename to api
-
-//универсальный клиент
-
 import (
 	"fmt"
 	"io"

@@ -1,10 +1,12 @@
 package bot
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
 	handler "github.com/end1essrage/dndhelper-discord/pkg/handler"
+	t "github.com/end1essrage/dndhelper-discord/pkg/types"
 	"github.com/sirupsen/logrus"
 )
 
@@ -25,7 +27,6 @@ func NewBot(token string, handler *handler.Handler) *Bot {
 }
 
 func (b *Bot) Start() error {
-
 	b.session.AddHandler(b.onMessage) //узнать о других вариантах
 
 	// In this example, we only care about receiving message events.
@@ -52,9 +53,22 @@ func (b *Bot) onMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	//разделяем на слова, создаем команду и заполняем переменные
+	command, err := b.deserializeInput(m.Content)
+	if err != nil {
+		s.ChannelMessageSend(m.ChannelID, "error reading command")
+	}
 
-	items := strings.Split(m.Content, " ")
+	message, err := b.handler.Handle(command)
+	if err != nil {
+		s.ChannelMessageSend(m.ChannelID, "error executiin command")
+	}
+
+	s.ChannelMessageSend(m.ChannelID, message)
+}
+
+func (b *Bot) deserializeInput(message string) (t.BotCommand, error) {
+
+	items := strings.Split(message, " ")
 	sCommand := items[0][1:]
 	params := make(map[string]string)
 	value := ""
@@ -67,6 +81,7 @@ func (b *Bot) onMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 				//err
 				continue
 			}
+			//-flags[0][1:]=flags[1]
 			params[flags[0][1:]] = flags[1]
 		} else {
 			value = items[i]
@@ -74,15 +89,10 @@ func (b *Bot) onMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	if value == "" {
-		s.ChannelMessageSend(m.ChannelID, "error reading command value")
+		return t.BotCommand{}, fmt.Errorf("error reading command value")
 	}
 
-	message, err := b.handler.Handle(sCommand, value, params)
-	if err != nil {
-		s.ChannelMessageSend(m.ChannelID, "error occured")
-	}
-
-	s.ChannelMessageSend(m.ChannelID, message)
+	return t.BotCommand{Command: sCommand, Value: value, Params: params}, nil
 }
 
 func (b *Bot) Stop() {

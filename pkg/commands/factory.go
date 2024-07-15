@@ -3,15 +3,15 @@ package commands
 import (
 	"net/http"
 
-	client "github.com/end1essrage/dndhelper-discord/pkg/client"
+	formatter "github.com/end1essrage/dndhelper-discord/pkg/helpers"
 )
 
-//пределать на метод который считывает параметры и рассовывает в поля команды
+//Переделать на билдер возможно?
 
-func NewSpellInfoCommand(client *client.Client, spellName, localization string) *GetSpellInfoCommand {
+func NewSpellInfoCommand(spellName, localization string, format formatter.Formatter) *GetSpellInfoCommand {
 	cmd := GetSpellInfoCommand{}
-	cmd.client = client
 	cmd.apiRout = "spell-book"
+	cmd.format = format
 	cmd.method = http.MethodGet
 	cmd.spellName = spellName
 	if localization != "" {
