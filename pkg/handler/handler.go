@@ -1,9 +1,10 @@
 package handler
 
 import (
-	"strings"
-
 	client "github.com/end1essrage/dndhelper-discord/pkg/client"
+	factory "github.com/end1essrage/dndhelper-discord/pkg/commands"
+	formatter "github.com/end1essrage/dndhelper-discord/pkg/helpers"
+	t "github.com/end1essrage/dndhelper-discord/pkg/types"
 )
 
 type Handler struct {
@@ -14,10 +15,10 @@ func NewHandler(client *client.Client) *Handler {
 	return &Handler{client: client}
 }
 
-func (h *Handler) Handle(command string, value string, params map[string]string) (string, error) {
-	switch command {
+func (h *Handler) Handle(command t.BotCommand) (string, error) {
+	switch command.Command {
 	case "spellinfo":
-		return h.getSpellInfo(value, params)
+		return h.getSpellInfo(command.Value, command.Params)
 	case "help":
 		return h.getHelpMessage(), nil
 	default:
@@ -29,34 +30,19 @@ func (h *Handler) getHelpMessage() string {
 	return "help"
 }
 
-// Реализовать автодокуиентирование доступных команд
 func (h *Handler) getSpellInfo(spellName string, params map[string]string) (string, error) {
+	var format formatter.Formatter
 
-	var sb strings.Builder
-
-	//считываем параметр
-	sb.WriteString("lang is " + params["lang"])
-
-	spell, err := h.client.GetSpellInfo(spellName)
-	if err != nil {
-		sb.WriteString("ERROR OCCURED: ")
-		sb.WriteString(err.Error())
-		return sb.String(), err
+	switch params["display"] {
+	case "min":
+		format = formatter.NewMinimalisticFormatter()
+	case "max":
+		format = formatter.NewSimpleFormatter()
+	default:
+		format = formatter.NewSimpleFormatter()
 	}
 
-	sb.WriteString("Spell Name : " + spell.Name)
-	sb.WriteString("\n")
+	command := factory.NewSpellInfoCommand(spellName, params["lang"], format)
 
-	sb.WriteString("Description: ")
-	for i := 0; i < len(spell.Desc); i++ {
-		sb.WriteString(spell.Desc[i])
-		sb.WriteString("\n")
-	}
-
-	sb.WriteString("Damage is " + spell.Damage.DamageType.Name + "\n")
-	for key, value := range spell.Damage.DamageAtSlotLevel {
-		sb.WriteString(key + " - " + value + "\n")
-	}
-
-	return sb.String(), nil
+	return command.Execute(h.client)
 }
