@@ -1,7 +1,6 @@
 package bot
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
@@ -10,7 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const commandLiteral string = "="
+const commandLiteral byte = '='
 
 type Bot struct {
 	session *discordgo.Session
@@ -27,47 +26,41 @@ func NewBot(token string, handler *handler.Handler) *Bot {
 }
 
 func (b *Bot) Start() error {
-	b.session.AddHandler(b.onMessage) //узнать о других вариантах
+	b.session.AddHandler(b.onMessage)
 
 	// In this example, we only care about receiving message events.
 	b.session.Identify.Intents = discordgo.IntentsGuildMessages
 
 	err := b.session.Open()
 	if err != nil {
-		logrus.Fatalf("error opening connection,", err)
+		logrus.Error("error opening connection,", err)
 		return err
 	}
 
-	// Wait here until CTRL-C or other term signal is received.
-	logrus.Info("Bot is now running.  Press CTRL-C to exit.")
 	return nil
 }
 
 func (b *Bot) onMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
-
+	//скипает свои сообщения
 	if m.Author.ID == s.State.User.ID {
 		return
 	}
-
-	if m.Content[0] != commandLiteral[0] { //переделать на байтовую команду
+	//скипает все сообщенияб кроме комманд
+	if m.Content[0] != commandLiteral {
 		return
 	}
 
-	command, err := b.deserializeInput(m.Content)
-	if err != nil {
-		s.ChannelMessageSend(m.ChannelID, "error reading command")
-	}
+	command := b.deserializeInput(m.Content)
 
 	message, err := b.handler.Handle(command)
 	if err != nil {
-		s.ChannelMessageSend(m.ChannelID, "error executiin command")
+		s.ChannelMessageSend(m.ChannelID, "error executing command")
 	}
 
 	s.ChannelMessageSend(m.ChannelID, message)
 }
 
-func (b *Bot) deserializeInput(message string) (t.BotCommand, error) {
-
+func (b *Bot) deserializeInput(message string) t.BotCommand {
 	items := strings.Split(message, " ")
 	sCommand := items[0][1:]
 	params := make(map[string]string)
@@ -76,23 +69,23 @@ func (b *Bot) deserializeInput(message string) (t.BotCommand, error) {
 	for i := 1; i < len(items); i++ {
 		// если есть -, то определять как параметр, иначе это является значением
 		if string(items[i][0]) == "-" {
-			flags := strings.Split(items[i], "=")
+			flags := strings.Split(items[i], string(commandLiteral))
 			if len(flags) > 2 {
-				//err
+				//это значит что в одном флаге два знака равно
 				continue
 			}
-			//-flags[0][1:]=flags[1]
-			params[flags[0][1:]] = flags[1]
+			if len(items) < 2 {
+				params[flags[0][1:]] = " "
+			} else {
+				params[flags[0][1:]] = items[1]
+			}
+
 		} else {
 			value = items[i]
 		}
 	}
 
-	if value == "" {
-		return t.BotCommand{}, fmt.Errorf("error reading command value")
-	}
-
-	return t.BotCommand{Command: sCommand, Value: value, Params: params}, nil
+	return t.BotCommand{Command: sCommand, Value: value, Params: params}
 }
 
 func (b *Bot) Stop() {

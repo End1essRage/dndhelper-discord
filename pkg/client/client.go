@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+
+	"github.com/spf13/viper"
 )
 
 type Client struct {
@@ -17,14 +19,14 @@ type Client struct {
 func NewClient(host string) *Client {
 	return &Client{
 		host:     host,
-		basePath: "/api",
+		basePath: viper.GetString("api_basepath"),
 		client:   http.Client{},
 	}
 }
 
 func (c *Client) FormatBaseUrl(rout string) url.URL {
 	return url.URL{
-		Scheme: "http",
+		Scheme: viper.GetString("api_sheme"),
 		Host:   c.host,
 		Path:   path.Join(c.basePath, rout),
 	}

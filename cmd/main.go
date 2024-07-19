@@ -36,7 +36,7 @@ func main() {
 		logrus.Error("error while reading environment %s", err.Error())
 	}
 
-	client := client.NewClient(viper.GetString("host"))
+	client := client.NewClient(viper.GetString("api_host"))
 	handler := handler.NewHandler(client)
 	bot := bot.NewBot(Token, handler)
 	err := bot.Start()
@@ -44,6 +44,7 @@ func main() {
 		logrus.Fatalf("cant start bot %s", err.Error())
 	}
 
+	logrus.Info("Bot is now running.  Press CTRL-C to exit.")
 	// Wait here until CTRL-C or other term signal is received.
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
