@@ -36,6 +36,11 @@ func main() {
 		logrus.Error("error while reading environment %s", err.Error())
 	}
 
+	token := os.Getenv("TOKEN")
+	if token != "" {
+		Token = token
+	}
+
 	client := client.NewClient(viper.GetString("api_host"))
 	handler := handler.NewHandler(client)
 	bot := bot.NewBot(Token, handler)
