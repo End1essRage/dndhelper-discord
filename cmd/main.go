@@ -24,8 +24,12 @@ func init() {
 	logrus.SetFormatter(&logrus.JSONFormatter{})
 
 	//Environment handling
-	if err := godotenv.Load(); err != nil {
-		logrus.Fatalf("error while reading environment %s", err.Error())
+	Env = os.Getenv("ENVIRONMENT")
+
+	if Env == c.ENV_LOCAL {
+		if err := godotenv.Load(); err != nil {
+			logrus.Fatalf("error while reading environment %s", err.Error())
+		}
 	}
 
 	Env = os.Getenv("ENVIRONMENT")
