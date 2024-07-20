@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	c "github.com/end1essrage/dndhelper-discord/pkg"
 	bot "github.com/end1essrage/dndhelper-discord/pkg/bot"
 	client "github.com/end1essrage/dndhelper-discord/pkg/client"
 	handler "github.com/end1essrage/dndhelper-discord/pkg/handler"
@@ -16,33 +17,36 @@ import (
 
 var (
 	Token string
+	Env   string
 )
 
 func init() {
-	flag.StringVar(&Token, "t", "", "Bot Token")
-	flag.Parse()
-}
-
-func main() {
-	//конфигурируем приложение
 	logrus.SetFormatter(&logrus.JSONFormatter{})
+
+	//Environment handling
+	if err := godotenv.Load(); err != nil {
+		logrus.Fatalf("error while reading environment %s", err.Error())
+	}
+
+	Env = os.Getenv("ENVIRONMENT")
+
+	if Env == "" {
+		logrus.Fatal("cant set environment")
+	}
+
+	logrus.Info("ENVIRONMENT IS " + Env)
+
+	setToken()
+	//Config Handling
 
 	if err := initConfig(); err != nil {
 		logrus.Fatalf("error while reading config %s", err.Error())
 	}
+}
 
-	if err := godotenv.Load(); err != nil {
-		//non fatal
-		logrus.Error("error while reading environment %s", err.Error())
-	}
-
-	token := os.Getenv("TOKEN")
-	if token != "" {
-		Token = token
-	}
-
+func main() {
 	client := client.NewClient(viper.GetString("api_host"))
-	handler := handler.NewHandler(client)
+	handler := handler.NewHandler(client, Env)
 	bot := bot.NewBot(Token, handler)
 	err := bot.Start()
 	if err != nil {
@@ -59,7 +63,29 @@ func main() {
 }
 
 func initConfig() error {
-	viper.AddConfigPath("configs")
-	viper.SetConfigName("config")
-	return viper.ReadInConfig()
+	v := viper.New()
+
+	if Env == c.ENV_LOCAL {
+		v.SetConfigName("config_local")
+	}
+	if Env == c.ENV_DEV {
+		v.SetConfigName("config_pod")
+	}
+
+	v.SetConfigType("yml")
+	v.AddConfigPath(".")
+	v.AddConfigPath("./configs")
+
+	return v.ReadInConfig()
+}
+
+func setToken() {
+	if Env == c.ENV_LOCAL {
+		flag.StringVar(&Token, "t", "", "Bot Token")
+		flag.Parse()
+	}
+
+	if Env == c.ENV_DEV {
+		Token = os.Getenv("TOKEN")
+	}
 }

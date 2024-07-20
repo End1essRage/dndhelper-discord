@@ -1,6 +1,6 @@
 package types
 
-//вынести в отдельный модуль
+// вынести в отдельный модуль
 type Spell struct {
 	Index         string     `json:"index"`
 	Name          string     `json:"name"`

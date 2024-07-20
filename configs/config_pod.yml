@@ -1,0 +1,4 @@
+api_host: "localhost:8080"
+api_basepath: "/api"
+api_sheme: "http"
+localization_default: "EN"

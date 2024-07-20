@@ -3,6 +3,7 @@ package handler
 import (
 	"strings"
 
+	c "github.com/end1essrage/dndhelper-discord/pkg"
 	client "github.com/end1essrage/dndhelper-discord/pkg/client"
 	commands "github.com/end1essrage/dndhelper-discord/pkg/commands"
 	formatter "github.com/end1essrage/dndhelper-discord/pkg/helpers"
@@ -11,10 +12,11 @@ import (
 
 type Handler struct {
 	client *client.Client
+	env    string
 }
 
-func NewHandler(client *client.Client) *Handler {
-	return &Handler{client: client}
+func NewHandler(client *client.Client, env string) *Handler {
+	return &Handler{client: client, env: env}
 }
 
 func (h *Handler) Handle(command t.BotCommand) (string, error) {
@@ -44,13 +46,19 @@ func (h *Handler) getSpellInfo(spellName string, params map[string]string) (stri
 
 	var format formatter.Formatter
 
-	switch params["display"] {
-	case "min":
-		format = formatter.NewMinimalisticFormatter()
-	case "max":
-		format = formatter.NewSimpleFormatter()
-	default:
-		format = formatter.NewSimpleFormatter()
+	if h.env == c.ENV_LOCAL {
+		format = formatter.NewDevFormatter()
+	}
+
+	if h.env == c.ENV_DEV {
+		switch params["display"] {
+		case "min":
+			format = formatter.NewSimpleFormatter()
+		case "max":
+			format = formatter.NewSimpleFormatter()
+		default:
+			format = formatter.NewSimpleFormatter()
+		}
 	}
 
 	command := commands.NewSpellInfoCommand(spellName, params["lang"], format)
